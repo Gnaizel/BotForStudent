@@ -5,6 +5,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import ru.gnaizel.enums.Cohort;
 
 import java.time.LocalDateTime;
 
@@ -20,5 +21,9 @@ public class User {
     private Long id;
     private Long chatId;
     private String userName;
+
+    @Enumerated(EnumType.STRING)
+    private Cohort cohort;
+
     private LocalDateTime registrationDate;
 }

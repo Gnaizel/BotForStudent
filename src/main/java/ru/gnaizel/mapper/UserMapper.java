@@ -9,6 +9,7 @@ public class UserMapper {
         return User.builder()
                 .chatId(userCreateDto.getChatId())
                 .userName(userCreateDto.getUserName())
+                .cohort(userCreateDto.getCohort())
                 .registrationDate(userCreateDto.getLocalDateTime())
                 .build();
     }
@@ -17,7 +18,7 @@ public class UserMapper {
         return  UserDto.builder()
                 .chatId(user.getChatId())
                 .userName(user.getUserName())
-                .localDateTime(user.getRegistrationDate())
+                .cohort(user.getCohort())
                 .build();
     }
 }
