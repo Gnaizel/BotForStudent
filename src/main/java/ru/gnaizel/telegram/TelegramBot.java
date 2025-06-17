@@ -43,7 +43,9 @@ public class TelegramBot extends TelegramLongPollingBot {
     private void creteMenuCommand() {
         List<BotCommand> botCommands = new ArrayList<>();
         botCommands.add(new BotCommand("/schedule_to_next_day", "Расписание на завтра"));
+        botCommands.add(new BotCommand("/schedule_to_day", "Расписание на сегодня"));
         botCommands.add(new BotCommand("/schedule", "Расписание на неделю"));
+        botCommands.add(new BotCommand("/start", "Команда для начального меню"));
 
         SetMyCommands myCommands = new SetMyCommands();
         myCommands.setCommands(botCommands);
@@ -63,8 +65,8 @@ public class TelegramBot extends TelegramLongPollingBot {
             String welcomeMessage = new StringBuilder()
                     .append("Добро пожаловать ")
                     .append(userService.findUserByChatId(message.getChatId()).getUserName())
-                    .append(" ! \n этот бот создан в целях по больше нихуя не делать,")
-                    .append("\n он может прислать вам актуальное расписание. \n By @Ganizel")
+                    .append(" ! \n этот бот создан для оптимизации простых действий связаных с учёбой,")
+                    .append("\n Пока он может прислать вам актуальное расписание. \n бот в процессе доработки \n By @Ganizel")
                     .toString();
             sendMessage(update, welcomeMessage);
         }
@@ -103,6 +105,13 @@ public class TelegramBot extends TelegramLongPollingBot {
                 sendMessage(update, scheduleService.fetchAndExtractTeachersSchedule("ИСП-926")); // НУЖНО ДАБАВИТЬ ВЫБОР ГРУППЫ
                 break;
             case "schedule_to_next_day":
+                sendMessage(update, scheduleService.buildScheduleToNextDay("ИСП-926"));
+                break;
+            case "schedule_to_day":
+                sendMessage(update, scheduleService.buildScheduleToday("ИСП-926"));
+                break;
+            case "start":
+                sendMessage(update, "Укажите данные профиля: \n Группу, Корпус");
                 break;
             default:
                 sendMessage(update, "Эта команда не поддерживается");
