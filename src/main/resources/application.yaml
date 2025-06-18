@@ -1,11 +1,10 @@
 telegram:
   bot:
-    username: "Check_AZU_bot"
-    token: "6531094812:AAH-XVCMzQfBlVpetG035gIsuW0YMrxD6GY"
-
+    username: "ppk_sstu_bot"
+    token: "8013678796:AAHU9QRn0jTB2kivcyNOoQa8Cyun8sgu9ag"
 spring:
   main:
-    banner-mode: off
+    banner-mode: console
   jpa:
     database: postgresql
     show-sql: false
@@ -20,3 +19,6 @@ spring:
     password: postgres
     username: postgres
     url: jdbc:postgresql://localhost:6543/user-db
+logging:
+  level:
+    root: info

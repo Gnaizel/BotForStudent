@@ -52,7 +52,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public boolean setKorpus(long chatId, String korpus) {
-        User user = userRepository.findById(chatId)
+        User user = userRepository.findByChatId(chatId)
                 .orElseThrow(() -> new TelegramUserByMassagValidationError("User not found"));
         user.setKorpus(korpus);
         userRepository.save(user);

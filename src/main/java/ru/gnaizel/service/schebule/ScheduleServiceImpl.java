@@ -23,27 +23,20 @@ public class ScheduleServiceImpl implements ScheduleService {
     private final DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("dd.MM.yyyy");
 
     @Override
-    public String fetchAndExtractTeachersSchedule(String groupName) {
+    public String fetchAndExtractTeachersSchedule(String groupName, String korpusName) {
         String html = ppkClient.getHtmlScheduleForPpkSite();
 
         String studentsBlock = ScheduleHtmlParser.extractStudentsBlock(html);
-        List<ScheduleEntry> allEntries = ScheduleHtmlParser.parseSchedule(studentsBlock, groupName);
+        List<ScheduleEntry> allEntries = ScheduleHtmlParser.parseSchedule(studentsBlock, groupName)
+                .stream().filter(scheduleEntry -> scheduleEntry.getBuilding().equals(korpusName))
+                .toList();
 
-//        List<ScheduleEntry> filtered = applyFilters(allEntries);
 
         return ScheduleFormatter.format(groupName, allEntries);
     }
 
-    private List<ScheduleEntry> applyFilters(List<ScheduleEntry> entries) {
-        return entries.stream()
-                //.filter(entry -> entry.getDay().equals("Понедельник"))
-                //.filter(entry -> entry.getLessonNumber().equals("2"))
-                //.filter(entry -> entry.getBuilding().equals("1"))
-                .collect(Collectors.toList());
-    }
-
     @Override
-    public String buildScheduleToday(String groupName) {
+    public String buildScheduleToday(String groupName, String korpusName) {
         LocalDate todayDaty = LocalDate.now();
 
         String html = ppkClient.getHtmlScheduleForPpkSite();
@@ -65,7 +58,7 @@ public class ScheduleServiceImpl implements ScheduleService {
     }
 
     @Override
-    public String buildScheduleToNextDay(String groupName) {
+    public String buildScheduleToNextDay(String groupName, String korpusName) {
         LocalDate nextDay = LocalDate.now().plusDays(1);
 
         String html = ppkClient.getHtmlScheduleForPpkSite();

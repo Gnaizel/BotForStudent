@@ -1,4 +1,15 @@
 services:
+  main-service:
+    build: ./
+    container_name: main-service
+    ports:
+      - "8080:8080"
+    depends_on:
+      - user-db
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://user-db:5432/user-db
+      - SPRING_DATASOURCE_USERNAME=postgres
+      - SPRING_DATASOURCE_PASSWORD=postgres
   user-db:
     image: postgres:16.1
     container_name: user-db

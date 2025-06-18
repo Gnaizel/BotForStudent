@@ -1,8 +1,10 @@
 package ru.gnaizel.formater;
 
 import lombok.extern.slf4j.Slf4j;
+import ru.gnaizel.exception.ScheduleValidationError;
 import ru.gnaizel.model.ScheduleEntry;
 
+import java.nio.channels.ShutdownChannelGroupException;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -15,7 +17,8 @@ public class ScheduleFormatter {
         StringBuilder sb = new StringBuilder("📅 Расписание для группы: ")
                 .append(groupName)
                 .append("\n\uD83C\uDFEB Корпус: ")
-                .append(entries.get(0).getBuilding())
+                .append(entries.stream().findFirst().orElseThrow(() -> new ScheduleValidationError("Schedule is empty"))
+                        .getBuilding())
                 .append("\n\n");
 
         Map<String, List<ScheduleEntry>> groupedByDay = entries.stream()

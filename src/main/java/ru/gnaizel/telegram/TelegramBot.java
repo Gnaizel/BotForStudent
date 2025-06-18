@@ -13,8 +13,12 @@ import org.telegram.telegrambots.meta.api.objects.commands.BotCommand;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
+import ru.gnaizel.dto.user.UserDto;
 import ru.gnaizel.exception.MessageValidationError;
+import ru.gnaizel.exception.ScheduleValidationError;
 import ru.gnaizel.exception.TelegramUpdateValidationError;
+import ru.gnaizel.mapper.UserMapper;
+import ru.gnaizel.model.User;
 import ru.gnaizel.service.schebule.ScheduleService;
 import ru.gnaizel.service.user.UserService;
 
@@ -36,7 +40,7 @@ public class TelegramBot extends TelegramLongPollingBot {
     @Value("${telegram.bot.username}")
     private String TELEGRAM_BOT_USERNAME;
 
-    private final HashMap<Long, Integer> inProgress = new HashMap<>(); //  1 - user chat id | 2 - processId
+    private final HashMap<Long, String> inProgress = new HashMap<>(); //  1 - user chat id | 2 - processId
 
     @Override
     public void onUpdateReceived(Update update) {
@@ -44,12 +48,10 @@ public class TelegramBot extends TelegramLongPollingBot {
         validationUpdate(update);
         foundUser(update);
 
-        // Сначала проверяем процесс
         if (checkForProcessAndHandle(update)) {
-            return; // Если процесс был обработан, выходим
+            return;
         }
 
-        // Только если не было in-progress действия, обрабатываем дальше
         handleUpdate(update);
     }
 
@@ -78,8 +80,10 @@ public class TelegramBot extends TelegramLongPollingBot {
             String welcomeMessage = new StringBuilder()
                     .append("Добро пожаловать ")
                     .append(userService.findUserByChatId(message.getChatId()).getUserName())
-                    .append(" ! \n этот бот создан для оптимизации простых действий связаных с учёбой,")
-                    .append("\n Пока он может прислать вам актуальное расписание. \n бот в процессе доработки \n By @Ganizel")
+                    .append(" ! \nэтот бот создан для оптимизации простых действий связаных с учёбой ,")
+                    .append("\nнапиши /start чтобы начать и заполни недостающие данные")
+                    .append("\nПока он может только прислать вам актуальное расписание. ")
+                    .append("\nБот в процессе доработки это альфа-версия\n")
                     .toString();
             sendMessage(update, welcomeMessage);
         }
@@ -123,7 +127,7 @@ public class TelegramBot extends TelegramLongPollingBot {
 
         if (inProgress.containsKey(chatId)) {
             switch (inProgress.get(chatId)) {
-                case 1: // setCohort() (setGroup)
+                case "setGroup": // setCohort() (setGroup)
                     try {
                         if (update.getMessage().getText().isEmpty() || update.getMessage().getText() == null) {
                             sendMessage(update,"Поле группы не может быть пустым");
@@ -139,11 +143,12 @@ public class TelegramBot extends TelegramLongPollingBot {
                             sendMessage(update,"Это не похоже на название группы");
                             throw new MessageValidationError("Grout can't be it");
                         }
-                        userService.setCohort(chatId, update.getMessage().getText().toUpperCase());
+                        userService.setCohort(chatId, update.getMessage().getText()
+                                .toUpperCase().replaceAll(" ",""));
                         sendMessage(update, "Группа изменена на: "
                                 + update.getMessage().getText().toUpperCase());
                         inProgress.remove(chatId);
-                        return true; // Обработано, нужно выйти
+                        return true;
                     } catch (Exception e) {
                         log.debug("Error setting cohort", e);
                         return true;
@@ -161,8 +166,97 @@ public class TelegramBot extends TelegramLongPollingBot {
 
         switch (callback) {
             case "setGroup":
-                sendMessage(update, "Отправьте мне наименование вашей группы в формате: ИСП-999");
-                inProgress.put(chatId, 1);
+                sendMessage(update, "Отправьте мне наименование вашей группы \nв формате: ГГГ-999");
+                inProgress.put(chatId, "setGroup");
+                break;
+            case "setKorpus":
+                try {
+                    SendMessage sendMessage = new SendMessage();
+                    sendMessage.setText("Выберете 1 из корпусов ниже\nКорпуса ППК СГТУ");
+                    sendMessage.setChatId(chatId);
+
+                    InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup();
+                    List<List<InlineKeyboardButton>> rowsInLine = new ArrayList<>();
+                    List<InlineKeyboardButton> row1 = new ArrayList<>();
+                    List<InlineKeyboardButton> row2 = new ArrayList<>();
+                    List<InlineKeyboardButton> row3 = new ArrayList<>();
+
+                    InlineKeyboardButton oneKorpusButton = new InlineKeyboardButton();
+                    oneKorpusButton.setText("Горького, 9");
+                    oneKorpusButton.setCallbackData("oneKorpusButton");
+
+                    InlineKeyboardButton tooKorpusButton = new InlineKeyboardButton();
+                    tooKorpusButton.setText("Ильинская площадь, 4");
+                    tooKorpusButton.setCallbackData("tooKorpusButton");
+
+                    InlineKeyboardButton threeKorpusButton = new InlineKeyboardButton();
+                    threeKorpusButton.setText("Крымская, 19");
+                    threeKorpusButton.setCallbackData("threeKorpusButton");
+
+                    InlineKeyboardButton fourKorpusButton = new InlineKeyboardButton();
+                    fourKorpusButton.setText("Международная, 24");
+                    fourKorpusButton.setCallbackData("fourKorpusButton");
+
+                    InlineKeyboardButton fiveKorpusButton = new InlineKeyboardButton();
+                    fiveKorpusButton.setText("Сакко и Ванцетти, 15");
+                    fiveKorpusButton.setCallbackData("fiveKorpusButton");
+
+                    InlineKeyboardButton sixKorpusButton = new InlineKeyboardButton();
+                    sixKorpusButton.setText("Сакко и Ванцетти (физкультурники)");
+                    sixKorpusButton.setCallbackData("sixKorpusButton");
+
+                    row1.add(oneKorpusButton);
+                    row1.add(tooKorpusButton);
+                    row2.add(threeKorpusButton);
+                    row2.add(fourKorpusButton);
+                    row3.add(fiveKorpusButton);
+                    row3.add(sixKorpusButton);
+
+                    rowsInLine.add(row1);
+                    rowsInLine.add(row2);
+                    rowsInLine.add(row3);
+
+                    inlineKeyboardMarkup.setKeyboard(rowsInLine);
+
+                    sendMessage.setReplyMarkup(inlineKeyboardMarkup);
+
+                    execute(sendMessage);
+                    inProgress.remove(chatId);
+                } catch (Exception e) {
+                    e.getMessage();
+                }
+
+                inProgress.put(chatId, "setKorpus");
+                break;
+            case "oneKorpusButton":
+                userService.setKorpus(chatId, "Горького, 9");
+                sendMessage(update, "Корпус установлен: Горького, 9");
+                log.info("User {} set korpus to: Горького, 9", chatId);
+                break;
+            case "tooKorpusButton":
+                userService.setKorpus(chatId, "Ильинская площадь, 4");
+                sendMessage(update, "Корпус установлен: Ильинская площадь, 4");
+                log.info("User {} set korpus to: Ильинская площадь, 4", chatId);
+                break;
+            case "threeKorpusButton":
+                userService.setKorpus(chatId, "Крымская, 19");
+                sendMessage(update, "Корпус установлен: Крымская, 19");
+                log.info("User {} set korpus to: Крымская, 19", chatId);
+                break;
+            case "fourKorpusButton":
+                userService.setKorpus(chatId, "Международная, 24");
+                sendMessage(update, "Корпус установлен: Международная, 24");
+                log.info("User {} set korpus to: Международная, 24", chatId);
+                break;
+            case "fiveKorpusButton":
+                userService.setKorpus(chatId, "Сакко и Ванцетти, 15");
+                sendMessage(update, "Корпус установлен: Сакко и Ванцетти, 15");
+                log.info("User {} set korpus to: Сакко и Ванцетти, 15", chatId);
+                break;
+            case "sixKorpusButton":
+                userService.setKorpus(chatId, "Сакко и Ванцетти (физкультурники)");
+                sendMessage(update, "Корпус установлен: Сакко и Ванцетти (физкультурники)");
+                log.info("User {} set korpus to: Сакко и Ванцетти (физкультурники)", chatId);
                 break;
             default:
                 sendMessage(update, "По какой-то причине кнопка не работает");
@@ -182,23 +276,35 @@ public class TelegramBot extends TelegramLongPollingBot {
             sendMessage(update, "Это не команда, все команды начинаются с /");
             throw new MessageValidationError("It is not command");
         }
+        if (command.contains("@")) {
+            String[] commandSplit = command.split("@");
+            if (!commandSplit[1].toLowerCase().equals(getBotUsername().toLowerCase())) {
+                return;
+            }
+            command = commandSplit[0];
+        }
+        log.info(command);
 
-        switch (command) {
-            case "schedule":
-                log.debug("Команда на запрос расписания в работе");
-                sendMessage(update, scheduleService.fetchAndExtractTeachersSchedule("ИСП-926")); // НУЖНО ДАБАВИТЬ ВЫБОР ГРУППЫ
-                break;
-            case "schedule_to_next_day":
-                sendMessage(update, scheduleService.buildScheduleToNextDay("ИСП-926"));
-                break;
-            case "schedule_to_day":
-                sendMessage(update, scheduleService.buildScheduleToday("ИСП-926"));
-                break;
-            case "start":
-                startCommand(update);
-                break;
-            default:
-                sendMessage(update, "Эта команда не поддерживается");
+        UserDto user = userService.findUserByChatId(update.getMessage().getChatId());
+        try {
+            switch (command) {
+                case "schedule":
+                    sendMessage(update, scheduleService.fetchAndExtractTeachersSchedule(user.getCohort(), user.getKorpus())); // НУЖНО ДАБАВИТЬ ВЫБОР ГРУППЫ
+                    break;
+                case "schedule_to_next_day":
+                    sendMessage(update, scheduleService.buildScheduleToNextDay(user.getCohort(), user.getKorpus()));
+                    break;
+                case "schedule_to_day":
+                    sendMessage(update, scheduleService.buildScheduleToday(user.getCohort(), user.getKorpus()));
+                    break;
+                case "start":
+                    startCommand(update);
+                    break;
+                default:
+                    sendMessage(update, "Эта команда не поддерживается");
+            }
+        } catch (ScheduleValidationError e) {
+            sendMessage(update, "Расписания для группы " + user.getCohort() + " и корпуса " + user.getKorpus() +" не найдено (Ну либо сайт лежит)");
         }
     }
 
@@ -211,6 +317,7 @@ public class TelegramBot extends TelegramLongPollingBot {
         InlineKeyboardButton setGroupButton = new InlineKeyboardButton();
         setGroupButton.setText("✏️Группа");
         setGroupButton.setCallbackData("setGroup");
+
         InlineKeyboardButton setKorpusButton = new InlineKeyboardButton();
         setKorpusButton.setText("✏️Корпус");
         setKorpusButton.setCallbackData("setKorpus");
@@ -224,7 +331,7 @@ public class TelegramBot extends TelegramLongPollingBot {
 
         SendMessage sendMessage = new SendMessage();
         sendMessage.setChatId(update.getMessage().getChatId());
-        sendMessage.setText("\"Укажите данные профиля: \\n Группу, Корпус\"");
+        sendMessage.setText("Укажите данные профиля: Группа, Корпус");
         sendMessage.setReplyMarkup(inlineKeyboardMarkup);
 
         try {

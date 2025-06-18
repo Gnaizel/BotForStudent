@@ -20,7 +20,7 @@ public class ScheduleHtmlParser {
         return matcher.group(1);
     }
 
-    public static List<ScheduleEntry> parseSchedule(String studentsBlock, String groupName) {
+    public static List<ScheduleEntry> parseSchedule(String studentsBlock, String groupName) throws ScheduleValidationError {
         List<ScheduleEntry> result = new ArrayList<>();
 
         Pattern buildingPattern = Pattern.compile("\"([^\"]+)\"\\s*:\\s*\\{(.*?)\\}(,?)", Pattern.DOTALL);
