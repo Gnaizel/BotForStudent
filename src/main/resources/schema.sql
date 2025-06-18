@@ -3,5 +3,6 @@ CREATE TABLE IF NOT EXISTS users (
     chat_id BIGINT NOT NULL,
     user_name VARCHAR(255) NOT NULL,
     registration_date TIMESTAMP NOT NULL,
-    cohort VARCHAR(100)
+    korpus VARCHAR(100),
+    cohort VARCHAR(10)
 );

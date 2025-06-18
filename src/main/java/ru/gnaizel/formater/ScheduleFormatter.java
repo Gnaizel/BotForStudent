@@ -14,6 +14,8 @@ public class ScheduleFormatter {
     public static String format(String groupName, List<ScheduleEntry> entries) {
         StringBuilder sb = new StringBuilder("📅 Расписание для группы: ")
                 .append(groupName)
+                .append("\n\uD83C\uDFEB Корпус: ")
+                .append(entries.get(0).getBuilding())
                 .append("\n\n");
 
         Map<String, List<ScheduleEntry>> groupedByDay = entries.stream()

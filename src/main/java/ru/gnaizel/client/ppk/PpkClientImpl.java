@@ -8,7 +8,6 @@ import ru.gnaizel.exception.ClientValidationException;
 @Service
 @RequiredArgsConstructor
 public class PpkClientImpl implements PpkClient {
-
     private final RestTemplate restTemplate = new RestTemplate();
 
     @Override

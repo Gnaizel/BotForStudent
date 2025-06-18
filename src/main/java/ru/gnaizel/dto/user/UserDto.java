@@ -9,5 +9,6 @@ import ru.gnaizel.enums.Cohort;
 public class UserDto {
     private Long chatId;
     private String userName;
-    private Cohort cohort;
+    private String korpus;
+    private String cohort;
 }
