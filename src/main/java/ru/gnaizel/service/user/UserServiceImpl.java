@@ -3,6 +3,7 @@ package ru.gnaizel.service.user;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.meta.api.objects.Message;
+import org.telegram.telegrambots.meta.api.objects.Update;
 import ru.gnaizel.dto.user.UserCreateDto;
 import ru.gnaizel.dto.user.UserDto;
 import ru.gnaizel.enums.Cohort;
@@ -20,8 +21,15 @@ public class UserServiceImpl implements UserService {
     private final UserRepository userRepository;
 
     @Override
-    public boolean checkingForANewUserByMassage(Message message) {
-        long chatId = message.getChatId();
+    public boolean checkingForANewUserByMassage(Update update) {
+        long chatId = 0;
+        Message message = null;
+        if (update.hasMessage()) {
+            message = update.getMessage();
+            chatId = message.getChatId();
+        } else if (update.hasCallbackQuery()) {
+            return false;
+        }
 
         if (message.getFrom() == null) {
             throw new TelegramUserByMassagValidationError("User not found");
@@ -43,6 +51,24 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    public boolean setKorpus(long chatId, String korpus) {
+        User user = userRepository.findById(chatId)
+                .orElseThrow(() -> new TelegramUserByMassagValidationError("User not found"));
+        user.setKorpus(korpus);
+        userRepository.save(user);
+        return true;
+    }
+
+    @Override
+    public boolean setCohort(Long chatId, String cohort) {
+        User user = userRepository.findByChatId(chatId)
+                .orElseThrow(() -> new TelegramUserByMassagValidationError("User not found"));
+        user.setCohort(cohort);
+        userRepository.save(user);
+        return true;
+    }
+
+    @Override
     public User createUser(long chatId, String userName) {
         if (userRepository.existsByChatId(chatId)) {
             throw new UserValidationError("User is exists");
@@ -55,7 +81,7 @@ public class UserServiceImpl implements UserService {
                 .chatId(chatId)
                 .userName(userName)
                 .localDateTime(LocalDateTime.now())
-                .cohort(Cohort.UNDEFINED)
+                .cohort("no cohort")
                 .build();
         return userRepository.save(UserMapper.userFromUserCreateDto(userCreateDto));
     }

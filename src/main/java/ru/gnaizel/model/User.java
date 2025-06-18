@@ -21,9 +21,8 @@ public class User {
     private Long id;
     private Long chatId;
     private String userName;
-
-    @Enumerated(EnumType.STRING)
-    private Cohort cohort;
+    private String korpus;
+    private String cohort;
 
     private LocalDateTime registrationDate;
 }

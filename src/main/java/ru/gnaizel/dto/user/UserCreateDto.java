@@ -21,5 +21,5 @@ public class UserCreateDto {
     private String userName;
     @NotNull
     private LocalDateTime localDateTime;
-    private Cohort cohort;
+    private String  cohort;
 }
