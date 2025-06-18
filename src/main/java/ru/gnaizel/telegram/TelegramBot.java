@@ -17,12 +17,9 @@ import ru.gnaizel.dto.user.UserDto;
 import ru.gnaizel.exception.MessageValidationError;
 import ru.gnaizel.exception.ScheduleValidationError;
 import ru.gnaizel.exception.TelegramUpdateValidationError;
-import ru.gnaizel.mapper.UserMapper;
-import ru.gnaizel.model.User;
 import ru.gnaizel.service.schebule.ScheduleService;
 import ru.gnaizel.service.user.UserService;
 
-import javax.xml.bind.ValidationException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -40,22 +37,27 @@ public class TelegramBot extends TelegramLongPollingBot {
     @Value("${telegram.bot.username}")
     private String TELEGRAM_BOT_USERNAME;
 
-    private final HashMap<Long, String> inProgress = new HashMap<>(); //  1 - user chat id | 2 - processId
+    private final HashMap<Long, String> inProgress = new HashMap<>();
 
     @Override
     public void onUpdateReceived(Update update) {
-        creteMenuCommand();
-        validationUpdate(update);
-        foundUser(update);
+        try {
+            createMenuCommand();
+            validationUpdate(update);
+            foundUser(update);
 
-        if (checkForProcessAndHandle(update)) {
-            return;
+            if (checkForProcessAndHandle(update)) {
+                return;
+            }
+
+            handleUpdate(update);
+        } catch (Exception e) {
+            log.error("Error processing update", e);
+            sendMessage(update, "Произошла ошибка при обработке команды");
         }
-
-        handleUpdate(update);
     }
 
-    private void creteMenuCommand() {
+    private void createMenuCommand() {
         List<BotCommand> botCommands = new ArrayList<>();
         botCommands.add(new BotCommand("/schedule_to_next_day", "Расписание на завтра"));
         botCommands.add(new BotCommand("/schedule_to_day", "Расписание на сегодня"));
@@ -109,9 +111,11 @@ public class TelegramBot extends TelegramLongPollingBot {
 
     private void handleUpdate(Update update) {
         if (update.hasMessage()) {
-            handleCommend(update);
+            handleCommand(update);
         } else if (update.hasCallbackQuery()) {
             handleCallback(update);
+        } else {
+            log.warn("Received update without message or callback");
         }
     }
 
@@ -263,7 +267,7 @@ public class TelegramBot extends TelegramLongPollingBot {
         }
     }
 
-    private void handleCommend(Update update) {
+    private void handleCommand(Update update) {
         String command;
 
         if (update.getMessage().getText().isBlank()) {
@@ -289,7 +293,7 @@ public class TelegramBot extends TelegramLongPollingBot {
         try {
             switch (command) {
                 case "schedule":
-                    sendMessage(update, scheduleService.fetchAndExtractTeachersSchedule(user.getCohort(), user.getKorpus())); // НУЖНО ДАБАВИТЬ ВЫБОР ГРУППЫ
+                    sendMessage(update, scheduleService.fetchAndExtractTeachersSchedule(user.getCohort(), user.getKorpus()));
                     break;
                 case "schedule_to_next_day":
                     sendMessage(update, scheduleService.buildScheduleToNextDay(user.getCohort(), user.getKorpus()));
