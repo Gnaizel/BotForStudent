@@ -7,11 +7,14 @@ import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.methods.commands.SetMyCommands;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
+import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageText;
 import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.commands.BotCommand;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardRow;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import ru.gnaizel.dto.user.UserDto;
 import ru.gnaizel.exception.MessageValidationError;
@@ -20,6 +23,7 @@ import ru.gnaizel.exception.TelegramUpdateValidationError;
 import ru.gnaizel.service.schebule.ScheduleService;
 import ru.gnaizel.service.user.UserService;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -49,11 +53,43 @@ public class TelegramBot extends TelegramLongPollingBot {
             if (checkForProcessAndHandle(update)) {
                 return;
             }
-
+            createKeyboard(update);
             handleUpdate(update);
         } catch (Exception e) {
             log.error("Error processing update", e);
             sendMessage(update, "Произошла ошибка при обработке команды");
+        }
+    }
+
+    private void createKeyboard(Update update) {
+        SendMessage sendMessage = new SendMessage();
+        long chatId;
+
+        if (update.hasMessage()) {
+            chatId = update.getMessage().getChatId();
+        } else {
+            chatId = update.getCallbackQuery().getMessage().getChatId();
+        }
+
+        sendMessage.setChatId(chatId);
+        sendMessage.setText("Плиточки: ");
+
+        ReplyKeyboardMarkup keyboardMarkup = new ReplyKeyboardMarkup();
+        keyboardMarkup.setResizeKeyboard(true);
+        keyboardMarkup.setOneTimeKeyboard(true);
+        List<KeyboardRow> keyboardRows = new ArrayList<>();
+
+        KeyboardRow rowInLine1 = new KeyboardRow();
+        rowInLine1.add("/schedule");
+
+        keyboardRows.add(rowInLine1); // Будет как универсальное сообщение с расписанием (Можно будет листать)
+        keyboardMarkup.setKeyboard(keyboardRows);
+        sendMessage.setReplyMarkup(keyboardMarkup);
+
+        try {
+            execute(sendMessage);
+        } catch (TelegramApiException e) {
+            throw new RuntimeException(e);
         }
     }
 
@@ -91,8 +127,8 @@ public class TelegramBot extends TelegramLongPollingBot {
         }
     }
 
-    private void sendMessage(Update update, String massage) {
-        long chatId = 0;
+    private Message sendMessage(Update update, String massage) {
+        long chatId;
         if (update.hasCallbackQuery()) {
             chatId = update.getCallbackQuery().getMessage().getChatId();
         } else {
@@ -103,7 +139,7 @@ public class TelegramBot extends TelegramLongPollingBot {
         sendMessage.setChatId(chatId);
         sendMessage.setText(massage);
         try {
-            execute(sendMessage);
+            return execute(sendMessage);
         } catch (TelegramApiException e) {
             throw new RuntimeException(e);
         }
@@ -120,7 +156,7 @@ public class TelegramBot extends TelegramLongPollingBot {
     }
 
     private boolean checkForProcessAndHandle(Update update) {
-        long chatId = 0;
+        long chatId;
         if (update.hasCallbackQuery()) {
             chatId = update.getCallbackQuery().getMessage().getChatId();
         } else if (update.hasMessage()) {
@@ -129,6 +165,7 @@ public class TelegramBot extends TelegramLongPollingBot {
             return false;
         }
 
+        // Если находится в процессе проверяет и тут обработка далее
         if (inProgress.containsKey(chatId)) {
             switch (inProgress.get(chatId)) {
                 case "setGroup": // setCohort() (setGroup)
@@ -167,6 +204,7 @@ public class TelegramBot extends TelegramLongPollingBot {
     private void handleCallback(Update update) {
         long chatId = update.getCallbackQuery().getMessage().getChatId();
         String callback = update.getCallbackQuery().getData();
+        UserDto user = userService.findUserByChatId(update.getCallbackQuery().getMessage().getChatId());
 
         switch (callback) {
             case "setGroup":
@@ -227,10 +265,25 @@ public class TelegramBot extends TelegramLongPollingBot {
                     execute(sendMessage);
                     inProgress.remove(chatId);
                 } catch (Exception e) {
-                    e.getMessage();
+                    throw new RuntimeException(e.getMessage());
                 }
 
                 inProgress.put(chatId, "setKorpus");
+                break;
+            case "prevDay":
+                editTextMessage(chatId,
+                        update.getCallbackQuery().getMessage().getMessageId(),
+                        scheduleService.buildScheduleByDate(user.getCohort(), user.getKorpus(), LocalDate.now().minusDays(1)));
+                break;
+            case "nextDay":
+                editTextMessage(chatId,
+                        update.getCallbackQuery().getMessage().getMessageId(),
+                        scheduleService.buildScheduleByDate(user.getCohort(), user.getKorpus(), LocalDate.now().plusDays(1)));
+                break;
+            case "fullSchedule":
+                editTextMessage(chatId,
+                        update.getCallbackQuery().getMessage().getMessageId(),
+                        scheduleService.fetchAndExtractTeachersSchedule(user.getCohort(), user.getKorpus()));
                 break;
             case "oneKorpusButton":
                 userService.setKorpus(chatId, "Горького, 9");
@@ -267,6 +320,65 @@ public class TelegramBot extends TelegramLongPollingBot {
         }
     }
 
+
+    private void getSchedule(Update update) {
+        long chatId;
+        if (update.hasCallbackQuery()) {
+            chatId = update.getCallbackQuery().getMessage().getChatId();
+        } else {
+            chatId = update.getMessage().getChatId();
+        }
+
+        UserDto user = userService.findUserByChatId(chatId);
+        SendMessage sendMessage = new SendMessage();
+        sendMessage.setChatId(chatId);
+        sendMessage.setText(scheduleService.buildScheduleToday(user.getCohort(), user.getKorpus()));
+
+        InlineKeyboardMarkup markup = new InlineKeyboardMarkup();
+        List<List<InlineKeyboardButton>> keyboard = new ArrayList<>();
+        List<InlineKeyboardButton> row = new ArrayList<>();
+
+        InlineKeyboardButton prevDay = new InlineKeyboardButton();
+        prevDay.setText("⬅️");
+        prevDay.setCallbackData("prevDay");
+
+        InlineKeyboardButton fullSchedule = new InlineKeyboardButton();
+        fullSchedule.setText("\uD83D\uDDD3");
+        fullSchedule.setCallbackData("fullSchedule");
+
+        InlineKeyboardButton nextDay = new InlineKeyboardButton();
+        nextDay.setText("➡️");
+        nextDay.setCallbackData("nextDay");
+
+        row.add(prevDay);
+        row.add(fullSchedule);
+        row.add(nextDay);
+        keyboard.add(row);
+        markup.setKeyboard(keyboard);
+
+        sendMessage.setReplyMarkup(markup);
+
+        try {
+            execute(sendMessage);
+        } catch (TelegramApiException e) {
+            log.error("Error sending schedule message", e);
+            throw new RuntimeException(e);
+        }
+    }
+
+    private void editTextMessage(long chatId, int messageId, String editText) {
+        EditMessageText editMessageText = new EditMessageText();
+        editMessageText.setText(editText);
+        editMessageText.setChatId(chatId);
+        editMessageText.setMessageId(messageId);
+
+        try {
+            execute(editMessageText);
+        } catch (TelegramApiException e) {
+            throw new TelegramUpdateValidationError(e.getMessage());
+        }
+    }
+
     private void handleCommand(Update update) {
         String command;
 
@@ -282,7 +394,7 @@ public class TelegramBot extends TelegramLongPollingBot {
         }
         if (command.contains("@")) {
             String[] commandSplit = command.split("@");
-            if (!commandSplit[1].toLowerCase().equals(getBotUsername().toLowerCase())) {
+            if (!commandSplit[1].equalsIgnoreCase(getBotUsername())) {
                 return;
             }
             command = commandSplit[0];
@@ -293,7 +405,8 @@ public class TelegramBot extends TelegramLongPollingBot {
         try {
             switch (command) {
                 case "schedule":
-                    sendMessage(update, scheduleService.fetchAndExtractTeachersSchedule(user.getCohort(), user.getKorpus()));
+                    getSchedule(update);
+//                    sendMessage(update, scheduleService.fetchAndExtractTeachersSchedule(user.getCohort(), user.getKorpus()));
                     break;
                 case "schedule_to_next_day":
                     sendMessage(update, scheduleService.buildScheduleToNextDay(user.getCohort(), user.getKorpus()));
