@@ -5,7 +5,7 @@ import java.time.LocalDate;
 public interface ScheduleService {
     String buildScheduleByDate(String groupName, String korpusName, LocalDate date);
 
-    String  fetchAndExtractTeachersSchedule(String groupName, String korpusName);
+    String  fetchAndExtractTeachersSchedule(String groupName);
 
     String buildScheduleToday(String groupName, String korpusName);
 

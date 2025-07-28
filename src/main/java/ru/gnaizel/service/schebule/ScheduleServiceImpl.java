@@ -35,14 +35,13 @@ public class ScheduleServiceImpl implements ScheduleService {
     }
 
     @Override
-    public String fetchAndExtractTeachersSchedule(String groupName, String korpusName) {
-        String studentsBlock = ScheduleHtmlParser.extractStudentsBlock(html);
-        List<ScheduleEntry> allEntries = ScheduleHtmlParser.parseSchedule(studentsBlock, groupName)
-                .stream().filter(scheduleEntry -> scheduleEntry.getBuilding().equals(korpusName))
-                .toList();
+    public String fetchAndExtractTeachersSchedule(String teachersName) {
+        String studentsBlock = ScheduleHtmlParser.extractTeacherBlock(html);
+        List<ScheduleEntry> allEntries = ScheduleHtmlParser.parseSchedule(studentsBlock, teachersName)
+                .stream().toList();
 
 
-        return ScheduleFormatter.format(groupName, allEntries);
+        return ScheduleFormatter.format(teachersName, allEntries);
     }
 
     @Override
@@ -72,10 +71,10 @@ public class ScheduleServiceImpl implements ScheduleService {
         List<ScheduleEntry> entries = ScheduleHtmlParser.parseSchedule(studentsBlock, groupName);
 
         entries = entries.stream()
-                .filter(entri -> {
-                    String[] dateParse = entri.getDay().split(" ");
-                    return LocalDate.parse(dateParse[1], dateTimeFormatter).equals(todayDaty);
-                })
+//                .filter(entri -> {
+//                    String[] dateParse = entri.getDay().split(" ");
+//                    return LocalDate.parse(dateParse[1], dateTimeFormatter).equals(todayDaty);
+//                }) ВНИМАНИЕ ЭТО НАДА ОБРАТНО ПОСТАВИТЬ !!!!!!!!!
                 .toList();
 
         if (!entries.isEmpty()) {
