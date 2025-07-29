@@ -202,7 +202,7 @@ public class TelegramBot extends TelegramLongPollingBot {
 
                     sendMessage(update ,scheduleService.fetchAndExtractTeachersSchedule(sename));
                     inProgress.remove(chatId);
-                break;
+                    return true;
                 case "setGroup": // setCohort() (setGroup)
                     try {
                         if (update.getMessage().getText().isEmpty() || update.getMessage().getText() == null) {
@@ -416,15 +416,12 @@ public class TelegramBot extends TelegramLongPollingBot {
         UserDto user = userService.findUserByChatId(update.getMessage().getChatId());
         try {
             switch (command) {
-                case "schedule":
+                case "schedule", "Расписание":
                     getSchedule(update);
 //                    sendMessage(update, scheduleService.fetchAndExtractTeachersSchedule(user.getCohort(), user.getKorpus()));
                     break;
-                case "Расписание":
-                    getSchedule(update);
-//                    sendMessage(update, scheduleService.fetchAndExtractTeachersSchedule(user.getCohort(), user.getKorpus()));
-                    break;
-                case "schedule_for_teacher":
+//
+                case "schedule_for_teacher", "Расписание преподавателей":
                     getScheduleForTeacher(update);
                     break;
                 case "schedule_to_next_day":

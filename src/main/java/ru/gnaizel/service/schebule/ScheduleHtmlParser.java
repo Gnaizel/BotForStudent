@@ -45,7 +45,7 @@ public class ScheduleHtmlParser {
             String building = buildingMatcher.group(1);
             String groupsBlock = buildingMatcher.group(2);
 
-            Pattern groupPattern = Pattern.compile("\"" + Pattern.quote(groupName) + "\"\\s*:\\s*\\[(.*?)\\]", Pattern.DOTALL);
+            Pattern groupPattern = Pattern.compile("\"[^\"]*?" + Pattern.quote(groupName) + "[^\"]*?\"\\s*:\\s*\\[(.*?)\\]", Pattern.DOTALL);
             Matcher groupMatcher = groupPattern.matcher(groupsBlock);
 
             if (groupMatcher.find()) {
