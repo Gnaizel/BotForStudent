@@ -22,6 +22,7 @@ public class ScheduleHtmlParser {
         if (!matcher.find()) {
             throw new ScheduleValidationError("'teachers' block not found");
         }
+        log.info(matcher.toString());
         return matcher.group(1);
     }
 

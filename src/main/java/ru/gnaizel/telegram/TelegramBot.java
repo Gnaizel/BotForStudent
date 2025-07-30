@@ -23,7 +23,7 @@ import ru.gnaizel.exception.TelegramUpdateValidationError;
 import ru.gnaizel.service.schebule.ScheduleService;
 import ru.gnaizel.service.user.UserService;
 
-import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -57,7 +57,7 @@ public class TelegramBot extends TelegramLongPollingBot {
             handleUpdate(update);
         } catch (Exception e) {
             log.error("Error processing update", e);
-            sendMessage(update, "Произошла ошибка при обработке команды");
+//            sendMessage(update, "Произошла ошибка при обработке команды");
         }
     }
 
@@ -79,10 +79,15 @@ public class TelegramBot extends TelegramLongPollingBot {
         List<KeyboardRow> keyboardRows = new ArrayList<>();
 
         KeyboardRow rowInLine1 = new KeyboardRow();
-        rowInLine1.add("Расписание");
-        rowInLine1.add("Расписание преподавателей");
+        KeyboardRow rowInLine2 = new KeyboardRow();
+
+        rowInLine1.add("Расписание \uD83D\uDCC5");
+        rowInLine1.add("Расписание преподавателей \uD83D\uDCC5");
+
+        rowInLine2.add("Профиль \uD83D\uDE4E\u200D♂\uFE0F");
 
         keyboardRows.add(rowInLine1);
+        keyboardRows.add(rowInLine2);
         keyboardMarkup.setKeyboard(keyboardRows);
         return keyboardMarkup;
 
@@ -94,6 +99,7 @@ public class TelegramBot extends TelegramLongPollingBot {
         botCommands.add(new BotCommand("/schedule_for_teacher", "Расписания преподавателей"));
         botCommands.add(new BotCommand("/schedule_to_day", "Расписание на сегодня"));
         botCommands.add(new BotCommand("/schedule", "Расписание на неделю"));
+        botCommands.add(new BotCommand("/profile", "Профиль"));
         botCommands.add(new BotCommand("/start", "Команда для начального меню"));
 
         SetMyCommands myCommands = new SetMyCommands();
@@ -111,15 +117,12 @@ public class TelegramBot extends TelegramLongPollingBot {
         Message message = update.getMessage();
 
         if (userService.checkingForANewUserByMassage(update)) {
-            String welcomeMessage = new StringBuilder()
-                    .append("Добро пожаловать ")
-                    .append(userService.findUserByChatId(message.getChatId()).getUserName())
-                    .append(" ! \nэтот бот создан для оптимизации простых действий связаных с учёбой")
-                    .append("\n")
-                    .append("\nПока он может только прислать вам актуальное расписание. ")
-                    .append("\n\n")
-                    .toString();
-            sendMessage(update, welcomeMessage);
+
+            String welcomeMessage = "Добро пожаловать " +
+                    "%s" +
+                    " ! \nэтот бот создан для оптимизации простых действий связаных с учёбой" +
+                    "\nПока он может только прислать вам актуальное расписание. ";
+            sendMessage(update, welcomeMessage.formatted(userService.findUserByChatId(message.getChatId()).getUserName()));
 
             InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup();
             List<List<InlineKeyboardButton>> rowsIsLine = new ArrayList<>();
@@ -196,14 +199,14 @@ public class TelegramBot extends TelegramLongPollingBot {
         // Если находится в процессе проверяет и тут обработка далее
         if (inProgress.containsKey(chatId)) {
             switch (inProgress.get(chatId)) {
-                case "schedule_to_next_day":
+                case "schedule_for_teacher":
                     String sename = update.getMessage().getText().toLowerCase().trim();
                     sename = sename.substring(0, 1).toUpperCase() + sename.substring(1);
 
                     sendMessage(update ,scheduleService.fetchAndExtractTeachersSchedule(sename));
                     inProgress.remove(chatId);
                     return true;
-                case "setGroup": // setCohort() (setGroup)
+                case "setGroup", "editGroup": // setCohort() (setGroup)
                     try {
                         if (update.getMessage().getText().isEmpty() || update.getMessage().getText() == null) {
                             sendMessage(update,"Поле группы не может быть пустым");
@@ -239,14 +242,13 @@ public class TelegramBot extends TelegramLongPollingBot {
     private void handleCallback(Update update) {
         long chatId = update.getCallbackQuery().getMessage().getChatId();
         String callback = update.getCallbackQuery().getData();
-        UserDto user = userService.findUserByChatId(update.getCallbackQuery().getMessage().getChatId());
 
         switch (callback) {
-            case "setGroup":
+            case "setGroup", "editGroup":
                 sendMessage(update, "Отправьте мне наименование вашей группы \nВ формате: ГГГ-999");
                 inProgress.put(chatId, "setGroup");
                 break;
-            case "setKorpus":
+            case "setKorpus", "editKorpus":
                 try {
                     SendMessage sendMessage = new SendMessage();
                     sendMessage.setText("Выберете 1 из корпусов ниже\nКорпуса ППК СГТУ");
@@ -340,6 +342,55 @@ public class TelegramBot extends TelegramLongPollingBot {
         }
     }
 
+    private void getProfile(Update update) {
+        long chatId = update.getMessage().getChatId();
+
+        UserDto user = userService.findUserByChatId(chatId);
+
+        String profileMessage = "Имя: %s\n" +
+                "Группа: %s\n" +
+                "Корпус: %s\n" +
+                "Дата регистрации: %s";
+        String messageText = profileMessage.formatted(user.getUserName(),
+                user.getCohort(),
+                user.getKorpus(),
+                user.getRegistrationDate().format(DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm")));
+
+        SendMessage message = new SendMessage();
+
+        message.setText(messageText);
+        message.setChatId(chatId);
+
+        InlineKeyboardMarkup buttonKeyboard = new InlineKeyboardMarkup();
+
+        List<InlineKeyboardButton> row1 = new ArrayList<>();
+        List<List<InlineKeyboardButton>> rows = new ArrayList<>();
+
+        InlineKeyboardButton editKorpus = new InlineKeyboardButton();
+        InlineKeyboardButton editGroup = new InlineKeyboardButton();
+
+        editGroup.setCallbackData("editGroup");
+        editGroup.setText("Группа✏️");
+        row1.add(editGroup);
+
+        editKorpus.setCallbackData("editKorpus");
+        editKorpus.setText("Корпус✏️");
+        row1.add(editKorpus);
+
+        rows.add(row1);
+
+        buttonKeyboard.setKeyboard(rows);
+
+        message.setReplyMarkup(buttonKeyboard);
+        createKeyboard(update);
+        createKeyboard(update);
+        try {
+            execute(message);
+        } catch (TelegramApiException e) {
+            log.debug(e.getMessage());
+        }
+    }
+
 
     private void getSchedule(Update update) {
         long chatId;
@@ -389,7 +440,7 @@ public class TelegramBot extends TelegramLongPollingBot {
             chatId = update.getMessage().getChatId();
         }
 
-        inProgress.put(chatId, "schedule_to_next_day");
+        inProgress.put(chatId, "schedule_for_teacher");
         sendMessage(update, "Пришли фамилию преподавателя:");
     }
 
@@ -412,16 +463,16 @@ public class TelegramBot extends TelegramLongPollingBot {
             command = commandSplit[0];
         }
         log.info(command);
-
         UserDto user = userService.findUserByChatId(update.getMessage().getChatId());
         try {
             switch (command) {
-                case "schedule", "Расписание":
-                    getSchedule(update);
-//                    sendMessage(update, scheduleService.fetchAndExtractTeachersSchedule(user.getCohort(), user.getKorpus()));
+                case "profile", "Профиль \uD83D\uDE4E\u200D♂\uFE0F":
+                    getProfile(update);
                     break;
-//
-                case "schedule_for_teacher", "Расписание преподавателей":
+                case "schedule", "Расписание \uD83D\uDCC5":
+                    getSchedule(update);
+                    break;
+                case "schedule_for_teacher", "Расписание преподавателей \uD83D\uDCC5":
                     getScheduleForTeacher(update);
                     break;
                 case "schedule_to_next_day":
@@ -439,11 +490,13 @@ public class TelegramBot extends TelegramLongPollingBot {
         } catch (ScheduleValidationError e) {
             sendMessage(update, "Актуального расписания не найдено");
 //            throw new ScheduleValidationError(e.getMessage());
+        } finally {
+            createKeyboard(update);
         }
     }
 
     private void startCommand(Update update) {
-
+        // ничего
     }
 
     private void validationUpdate(Update update) {
@@ -456,6 +509,9 @@ public class TelegramBot extends TelegramLongPollingBot {
         if (!update.hasMessage()
                 && !(update.getMessage().hasText() || update.getMessage().hasDocument())) {
             throw new TelegramUpdateValidationError("Message is not available");
+        }
+        if (update.getMessage().getChatId() < 0) {
+            throw new TelegramUpdateValidationError("Bot can't be handly group message");
         }
     }
 
