@@ -94,7 +94,7 @@ public class TelegramBot extends TelegramLongPollingBot {
         }
     }
 
-    @Scheduled(cron = "0 30 7 * * *")
+    @Scheduled(cron = "0 30 7 * * ?", zone = "Europe/Moscow") // Расписание будет отправлятся в 7:30 по мск
     private void sendScheduleEveryDaySub() {
         scheduleService.alertNewScheduleTodayUserSub(this);
         scheduleService.alertNewScheduleTodayGroupSub(this);

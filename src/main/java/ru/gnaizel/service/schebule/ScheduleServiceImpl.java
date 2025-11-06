@@ -37,9 +37,6 @@ public class ScheduleServiceImpl implements ScheduleService {
 
     @Scheduled(cron = "0 0 * * * ?")
     private void refreshHtml() {
-//        html = ppkClient.getHtmlScheduleForPpkSite();
-//        log.info("HTML content refreshed");
-
         try {
             String newHtml = ppkClient.getHtmlScheduleForPpkSite();
             if (newHtml != null && !newHtml.isBlank()) {
@@ -164,8 +161,6 @@ public class ScheduleServiceImpl implements ScheduleService {
 
     @Override
     public String buildScheduleToWeek(String groupName, String korpusName) {
-        LocalDate todayDaty = LocalDate.now();
-
         String studentsBlock = ScheduleHtmlParser.extractStudentsBlock(html);
         List<ScheduleEntry> entries = ScheduleHtmlParser.parseSchedule(studentsBlock, groupName);
 

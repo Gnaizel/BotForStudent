@@ -19,8 +19,8 @@ public class ScheduleUpdateListener {
         if (event.isHtmlChanged()) {
             log.info("Schedule updated, sending notifications...");
 
-            scheduleService.alertNewScheduleToWeekGroupSub(telegramBot);
-//            scheduleService.alertNewScheduleTodayGroupSub(telegramBot);
+//            scheduleService.alertNewScheduleToWeekGroupSub(telegramBot);
+//            scheduleService.alertNewScheduleToWeekUserSub(telegramBot);
         }
     }
 }
