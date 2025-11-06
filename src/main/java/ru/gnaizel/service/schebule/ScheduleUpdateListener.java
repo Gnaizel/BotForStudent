@@ -20,7 +20,7 @@ public class ScheduleUpdateListener {
             log.info("Schedule updated, sending notifications...");
 
             scheduleService.alertNewScheduleToWeekGroupSub(telegramBot);
-//            scheduleService.alertNewScheduleTodayGroupSub(telegramBot);
+            scheduleService.alertNewScheduleToWeekUserSub(telegramBot);
         }
     }
 }
