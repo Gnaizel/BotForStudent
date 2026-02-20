@@ -26,9 +26,9 @@ services:
     volumes:
       - ./logs:/app/logs
     environment:
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://database:5432/schedule_bot_database
+      - SPRING_DATASOURCE_URL=url
       - SPRING_DATASOURCE_USERNAME=postgres
       - SPRING_DATASOURCE_PASSWORD=postgres
-      - TELEGRAM_BOT_NAME=@ppk_sstu_bot
-      - TELEGRAM_BOT_TOKEN=8013678796:AAFcDIYcUOorl5AraDmunJmZoai7_gl2tc8
+      - TELEGRAM_BOT_NAME=user
+      - TELEGRAM_BOT_TOKEN=token
     restart: on-failure:6

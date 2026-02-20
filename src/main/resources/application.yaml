@@ -3,7 +3,7 @@ spring:
     banner-mode: OFF
 
   datasource:
-    url: jdbc:postgresql://localhost:3456/schedule_bot_database
+    url: url
     username: postgres
     password: postgres
     driver-class-name: org.postgresql.Driver
@@ -39,8 +39,8 @@ app:
 
 telegram:
   bot:
-    name: "@ppk_sstu_bot"
-    token: "8013678796:AAFcDIYcUOorl5AraDmunJmZoai7_gl2tc8"
+    name: "@name"
+    token: "token"
 
 ppk:
-  schedule-link: "https://ppk.sstu.ru/schedule/"
+  schedule-link: "link"
