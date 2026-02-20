@@ -1,0 +1,46 @@
+spring:
+  main:
+    banner-mode: OFF
+
+  datasource:
+    url: jdbc:postgresql://localhost:3456/schedule_bot_database
+    username: postgres
+    password: postgres
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+
+  jackson:
+    time-zone: UTC
+    date-format: dd-MM-yyyy HH:mm:ss
+
+server:
+  port: 8080
+
+logging:
+  config: classpath:logback-spring.xml
+
+app:
+  async:
+    core-pool-size: 5
+    max-pool-size: 20
+    queue-capacity: 100
+  retry:
+    max-attempts: 3
+    delay: 1000
+  scheduler:
+    enabled: true
+
+telegram:
+  bot:
+    name: "@ppk_sstu_bot"
+    token: "8013678796:AAFcDIYcUOorl5AraDmunJmZoai7_gl2tc8"
+
+ppk:
+  schedule-link: "https://ppk.sstu.ru/schedule/"

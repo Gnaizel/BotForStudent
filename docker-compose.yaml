@@ -1,0 +1,34 @@
+services:
+  database:
+    image: postgres:17.0
+    container_name: schedule_bot_database_container
+    ports:
+      - "3456:5432"
+    environment:
+      - POSTGRES_DB=schedule_bot_database
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+
+  app:
+    build: .
+    container_name: schedule_bot_app
+    ports:
+      - "8080:8080"
+    depends_on:
+      database:
+        condition: service_healthy
+    volumes:
+      - ./logs:/app/logs
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://database:5432/schedule_bot_database
+      - SPRING_DATASOURCE_USERNAME=postgres
+      - SPRING_DATASOURCE_PASSWORD=postgres
+      - TELEGRAM_BOT_NAME=@ppk_sstu_bot
+      - TELEGRAM_BOT_TOKEN=8013678796:AAFcDIYcUOorl5AraDmunJmZoai7_gl2tc8
+    restart: on-failure:6
