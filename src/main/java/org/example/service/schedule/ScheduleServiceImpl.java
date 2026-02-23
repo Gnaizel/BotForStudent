@@ -3,6 +3,7 @@ package org.example.service.schedule;
 import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.example.scraper.client.PpkClient;
+import org.example.scraper.exception.ResponseValidationException;
 import org.example.scraper.exception.ScheduleNotFound;
 import org.example.scraper.exception.ScraperHtmlValidationException;
 import org.example.scraper.models.ScheduleEntry;
@@ -19,14 +20,12 @@ import java.util.List;
 @Service
 public class ScheduleServiceImpl implements ScheduleService {
 
-    private final String ppkScheduleLink;
     private final PpkClient ppkClient;
     private final DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("dd.MM.yyyy");
 
     private volatile String html;
 
     public ScheduleServiceImpl(@Value("${ppk.schedule-link}") String ppkScheduleLink) {
-        this.ppkScheduleLink = ppkScheduleLink;
         this.ppkClient = new PpkClient(ppkScheduleLink);
     }
 
@@ -36,9 +35,9 @@ public class ScheduleServiceImpl implements ScheduleService {
         try {
             updateHtml();
             if (this.html == null) {
-                throw new RuntimeException("Failed to fetch initial HTML. Application cannot start.");
+                throw new ResponseValidationException("Failed to fetch initial HTML. Application cannot start.");
             }
-        } catch (Exception e) {
+        } catch (ResponseValidationException e) {
             log.error("CRITICAL: Could not load initial schedule: {}", e.getMessage());
             throw new IllegalStateException("Initial schedule load failed", e);
         }
@@ -54,7 +53,7 @@ public class ScheduleServiceImpl implements ScheduleService {
         }
     }
 
-    private void updateHtml() {
+    private void updateHtml() throws ResponseValidationException {
         String fetchedHtml = ppkClient.getHtmlPpk();
         if (fetchedHtml != null && !fetchedHtml.equals(this.html)) {
             this.html = fetchedHtml;

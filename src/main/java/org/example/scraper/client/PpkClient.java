@@ -14,11 +14,11 @@ public class PpkClient {
         this.restTemplate = new RestTemplate();
     }
 
-    public String getHtmlPpk() {
+    public String getHtmlPpk() throws ResponseValidationException {
         ResponseEntity<String> response = restTemplate.getForEntity(ppkUrl, String.class);
 
         if (!response.getStatusCode().is2xxSuccessful()) {
-            throw new RuntimeException("Can't get PPK HTML, status: " + response.getStatusCode());
+            throw new ResponseValidationException("Can't get PPK HTML, status: " + response.getStatusCode());
         }
 
         String htmlPpk = response.getBody();
