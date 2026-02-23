@@ -26,20 +26,23 @@ public class ScheduleFormatter {
             sb.append("\n┌ 📆 <b>").append(formatDay(dayEntry.getKey())).append("</b>\n");
 
             for (ScheduleEntry entry : lessons) {
-                String time = entry.getTime().replace(" - ", ":").substring(0, 5);
+                String time = entry.getTime()
+                        .replace(" - ", ":")
+                        .replace(".",":").
+                        substring(0, 5);
                 String content = entry.getContent();
 
                 sb.append("│ <b>").append(entry.getLessonNumber()).append("</b>")
-                        .append("  <code>(").append(time).append(")</code>  ")
-                        .append(formatSubject(content)).append("\n");
+                        .append(" - <code>").append(time).append("</code>\n");
+
+                sb.append("│   ").append(formatSubject(content)).append("\n");
 
                 String teacherLine = formatTeacherAndCabinet(content);
                 if (!teacherLine.isEmpty()) {
-                    sb.append("│        <i>").append(teacherLine).append("</i>\n");
+                    sb.append("│   <i>").append(teacherLine).append("</i>\n");
                 }
             }
         }
-
         return sb.toString();
     }
 

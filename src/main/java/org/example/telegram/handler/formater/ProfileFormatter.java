@@ -11,7 +11,7 @@ public class ProfileFormatter {
     public static String format(User user) {
 
         return "👤 <b>Профиль</b>\n" +
-                "─────────────────────\n\n" +
+                "───────────────────\n\n" +
                 "🏷 <b>Имя:</b> " +
                 user.getUsername() +
                 "\n" +
