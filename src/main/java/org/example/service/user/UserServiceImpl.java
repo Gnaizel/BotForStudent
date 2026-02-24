@@ -2,7 +2,7 @@ package org.example.service.user;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.example.exception.UserExistException;
+import org.example.exception.UserValidationException;
 import org.example.models.User;
 import org.example.repository.UserRepository;
 import org.springframework.stereotype.Service;
@@ -21,7 +21,7 @@ public class UserServiceImpl implements UserService {
         Optional<User> user = userRepository.findByTgUserId(tgUserId);
         if (user.isEmpty()) {
             log.error("User with Telegram-id {} not found Class: {}", tgUserId, this.getClass().getSimpleName());
-            throw new UserExistException("User with Telegram-id " + tgUserId + " does not exist");
+            throw new UserValidationException("User with Telegram-id " + tgUserId + " does not exist");
         }
 
         return user.get();
@@ -31,7 +31,7 @@ public class UserServiceImpl implements UserService {
     public void createUser(String username, Long tgUserId, String studentGroupName) {
         if (userRepository.findByTgUserId(tgUserId).isPresent()) {
             log.error("User with id {} already exists", tgUserId);
-            throw new UserExistException(
+            throw new UserValidationException(
                     String.format("User with id %d already exists", tgUserId));
         }
 

@@ -57,7 +57,7 @@ public class ScheduleServiceImpl implements ScheduleService {
         String fetchedHtml = ppkClient.getHtmlPpk();
         if (fetchedHtml != null && !fetchedHtml.equals(this.html)) {
             this.html = fetchedHtml;
-            log.info("Html updated successfully");
+            log.debug("Html updated successfully");
         } else if (fetchedHtml == null) {
             log.warn("Fetched HTML is null");
         } else {

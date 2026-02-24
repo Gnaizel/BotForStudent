@@ -2,6 +2,7 @@ package org.example.telegram.handler;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.example.service.group.GroupService;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.objects.CallbackQuery;
 import org.telegram.telegrambots.meta.api.objects.Update;
@@ -18,6 +19,8 @@ public class UpdateDispatcher {
     private final CommandHandler commandHandler;
     private final CallbackQueryHandler callbackHandler;
     private final DocumentHandler documentHandler;
+    private final NewChatMemberHandler newChatMemberHandler;
+    private final GroupService groupService;
 
     public void dispatch(Update update) {
         if (update.hasCallbackQuery()) {
@@ -26,13 +29,19 @@ public class UpdateDispatcher {
             return;
         }
 
-        User tgUser = update.getMessage().getFrom();
-        if (tgUser.getIsBot()) {
-            return;
-        }
-
         if (update.hasMessage()) {
+            User tgUser = update.getMessage().getFrom();
             Message message = update.getMessage();
+
+            if (message.getMigrateFromChatId() != null) {
+                long oldChatId = message.getMigrateFromChatId();
+                long newChatId = message.getChatId();
+                log.info("Group migrated: oldChatId: {} -> newChatId: {}", oldChatId, newChatId);
+                groupService.migrateChatId(oldChatId, newChatId);
+                return;
+            }
+
+            if (tgUser.getIsBot()) return;
 
             if (message.hasText()) {
                 log.debug("User: [username: {} | tgUserId: {}] Send message to [text: {} | messageId: {}]",
@@ -50,9 +59,8 @@ public class UpdateDispatcher {
             } else if (message.hasDocument()) {
                 documentHandler.handleDocument(message);
             }
-            return;
+        } else if (update.hasMyChatMember()) {
+            newChatMemberHandler.handleMyNewChatMember(update.getMyChatMember());
         }
-        // TODO: Реализовать другие эвенты по типо добавления бота в группу и так далие
-
     }
 }

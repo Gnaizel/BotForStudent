@@ -1,25 +1,29 @@
 package org.example.models;
 
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
-
-import java.util.List;
+import lombok.*;
+import org.example.enums.BotRoles;
 
 @Getter
 @Setter
 @Entity
 @Table(name = "groups")
+@Builder
+@AllArgsConstructor
 @NoArgsConstructor
 public class Group {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private long id;
 
-    private long tgGroupId;
+    private long chatId;
     private String tgGroupName;
 
-    @ManyToMany(fetch = FetchType.LAZY, mappedBy = "groups")
-    private List<User> tgUsers;
+    @Enumerated(EnumType.STRING)
+    private BotRoles tgRole;
+
+    private int usersCount;
+
+//    @ManyToMany(fetch = FetchType.LAZY, mappedBy = "groups")
+//    private List<User> tgUsers;
 }

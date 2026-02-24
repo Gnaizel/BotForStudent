@@ -16,9 +16,12 @@ public class TelegramBotInit implements ApplicationRunner {
     private final TelegramBot telegramBot;
 
     @Override
-    public void run(ApplicationArguments args) throws Exception {
+    public void run(ApplicationArguments args) {
         try {
-            botsApplication.registerBot(telegramBot.getBotToken(),  telegramBot);
+            botsApplication.registerBot(
+                    telegramBot.getBotToken(),
+                    telegramBot
+            );
             log.info("Bot {} started with token: {}",
                     telegramBot.getBotName(),
                     telegramBot.getBotToken());

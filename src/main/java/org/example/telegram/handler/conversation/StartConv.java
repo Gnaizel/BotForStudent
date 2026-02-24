@@ -6,6 +6,7 @@ import org.example.service.user.UserService;
 import org.example.telegram.TelegramBotClient;
 import org.example.telegram.handler.UserStateStorage;
 import org.example.telegram.handler.enums.UserState;
+import org.example.telegram.keyboard.MainKeyboard;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.objects.message.Message;
 
@@ -33,11 +34,14 @@ public class StartConv implements BotConversation {
         }
 
         String displayName = message.getFrom().getUserName() != null
-                ? message.getFrom().getUserName()
+                ? "@" + message.getFrom().getUserName()
                 : message.getFrom().getFirstName();
 
         userService.createUser(displayName, tgUserId, text);
         stateStorage.clearState(tgUserId);
-        sender.sendMessage("Успех! Ты зарегистрирован.", message.getChatId());
+        sender.sendMessage("Успех! Ты зарегистрирован.",
+                message.getChatId(),
+                MainKeyboard.getKeyboard()
+        );
     }
 }

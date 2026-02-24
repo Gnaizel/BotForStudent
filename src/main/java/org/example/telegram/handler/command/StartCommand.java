@@ -33,10 +33,7 @@ public class StartCommand implements BotCommand {
             }
         } else {
             stateStorage.setState(tgUser.getId(), UserState.WAITING_FOR_GROUP);
-            client.sendMessage("Привет! Напиши свою группу: ",
-                    tgUser.getId(),
-                    MainKeyboard.getKeyboard()
-            );
+            client.sendMessage("Привет! Напиши свою группу: ", tgUser.getId());
         }
     }
 }

@@ -4,6 +4,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.client.okhttp.OkHttpTelegramClient;
+import org.telegram.telegrambots.meta.api.methods.groupadministration.GetChatMemberCount;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageReplyMarkup;
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageText;
@@ -96,19 +97,16 @@ public class TelegramBotClient {
         }
     }
 
-    public void sendMessage(String message, long chatId, InlineKeyboardMarkup keyboard) {
-
-        SendMessage sendMessage = SendMessage.builder()
-                .chatId(String.valueOf(chatId))
-                .text(message)
-                .replyMarkup(keyboard)
-                .build();
-        sendMessage.enableHtml(true);
-
+    public Integer getChatMemberCount(long chatId) {
         try {
-            telegramClient.execute(sendMessage);
+            return telegramClient.execute(
+                    GetChatMemberCount.builder()
+                            .chatId(chatId)
+                            .build()
+            );
         } catch (TelegramApiException e) {
-            log.warn("Message SendMessage failed: {}", e.getMessage());
+            log.warn("GetChatMemberCount failed chatId: {} reason: {}", chatId, e.getMessage());
+            return null;
         }
     }
 }
