@@ -87,7 +87,7 @@ public class HtmlPPKScraper {
         }
 
         // Обработка данных (начиная с третьей строки)
-        for (int i = 2; i < rows.size(); i++) {
+        for (int i = 1; i < rows.size(); i++) {
             Element row = rows.get(i);
             Elements cells = row.select("td");
 
